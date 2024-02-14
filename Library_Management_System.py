@@ -21,39 +21,52 @@ class Library:
         author = input("Enter book author: ")
         year = input("Enter the first release year: ")
         pages = input("Enter the number of pages: ")
-        self.books_file.write(f"{title},{author},{year},{pages}\n")
+        self.books_file.write(f"{title}, {author}, {year}, {pages}\n")
 
     def remove_book(self):
-        # Get the title to remove from the user, case insensitive
         title_to_remove = input("Enter book title to remove: ").strip().lower()
-        book_found = False
+        books_to_remove = []
 
-        # Open the file using a context manager
-        with open('books.txt', 'r+') as file:
+        with open('books.txt', 'r') as file:
             lines = file.readlines()
-            file.seek(0)  # Go to the beginning of the file
-            file.truncate()  # Clear the file
 
+        with open('books.txt', 'w') as file:
             for line in lines:
-                # Extract title for comparison, assuming the title is the first element
-                title = line.split(',')[0].strip().lower()
-
-                if title != title_to_remove:
-                    file.write(line)  # Write the line back to the file if it's not the book to remove
+                title, author, year, pages = line.strip().lower().split(', ')
+                if title_to_remove in title:
+                    books_to_remove.append(line)
                 else:
-                    book_found = True  # Mark as found, but don't write it back (effectively deleting it)
+                    file.write(line)
 
-            if not book_found:
-                print("Book not found. No book has been removed.")
+        # Handle the case where multiple or no books are found
+        if not books_to_remove:
+            print("No matching books found.")
+        elif len(books_to_remove) == 1:
+            confirm = input(f"Did you mean to remove '{books_to_remove[0]}'? (y/n): ").lower()
+            if confirm == 'y':
+                print(f"Book '{books_to_remove[0]}' has been removed.")
             else:
-                # Ask for confirmation before deletion
-                confirm = input(f"Are you sure you want to remove '{title_to_remove}'? (y/n): ").lower()
+                with open('books.txt', 'a') as file:
+                    file.write(books_to_remove[0])
+        else:
+            print("Multiple books found:")
+            for idx, book in enumerate(books_to_remove, 1):
+                print(f"{idx}. {book}")
+            book_idx = int(input("Enter the number of the book you want to remove: ")) - 1
+            if 0 <= book_idx < len(books_to_remove):
+                confirm = input(f"Are you sure you want to remove '{books_to_remove[book_idx]}'? (y/n): ").lower()
                 if confirm == 'y':
-                    print(f"Book '{title_to_remove}' has been removed.")
+                    books_to_remove.pop(book_idx)
+                    print("Book removed.")
                 else:
-                    # Write the removed book back to the file
-                    file.write(f"{title_to_remove}\n")
                     print("No books were removed.")
+            else:
+                print("Invalid selection.")
+
+            # Rewrite the removed books back to the file except the selected one
+            with open('books.txt', 'a') as file:
+                for book in books_to_remove:
+                    file.write(book)
 
 
 # Create an instance of the Library class
